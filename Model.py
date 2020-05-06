@@ -6,8 +6,8 @@ Class Order(object):
 		self.fixed_cost=self.supplier.fixed_cost
 		#ordered items from supplier
 		self.items={
-			"ganja":3 #num di kg di ganja ordinate
-			"fumo":10
+			"mele":3 #num di kg di ganja ordinate
+			"banane":10
 		}
 		#time to arrive
 		self.time_to_arrive
@@ -37,42 +37,37 @@ Class Supplier(object):
 if __name__=='__main__':
 	day=0
 	listino_prezzi={
-		"ganja":15
-		"fumo afghano":12
-		"fumo copertone":5
-		"MDMA":30
-		"chrystal meth":40
-		"popper":25
-		"LSD":15
+		"mele":2
+		"pere":3
+		"nespole":3.5
+		"ciliege":4.5
+		"banane":3
+		"arance":2.5
+		"pesche":4
 	}
 	inventory={
-		"chrystal meth":2
-		"ganja":5
-		"MDMA":2
-		"LSD":6
+		"arance":4
+		"pere":5
+		"mele":2
 	}
 	suppliers=[]
-	supp1=Supplier("don Miura")
+	supp1=Supplier("Mercato Centrale")
 	suppliers.append(supp1)
-	supp2=Supplier("don Ciruzzo")
+	supp2=Supplier("Import Spagna")
 	suppliers.append(supp2)
-	supp3=Supplier("Pablo Escobar")
+	supp3=Supplier("Frutta srl")
 	suppliers.append(supp3)
-	supp4=Supplier("gang di Bogotà")
+	supp4=Supplier("Coltivatori diretti")
 	suppliers.append(supp4)
-	supp5=Supplier("El Chapo")
-	suppliers.append(supp5)
-	supp6=Supplier("Tony lo Smilzo")
-	suppliers.append(supp6)
 	while day<100:
 		if order_comes:
 			AggiornaInventario(order)
 		# NOT OUR PROBLEM HOW TO ESTIMATE DEMAND
 		demand_estimation={
-			"ganja":2
-			"fumo afghano":5
-			"MDMA":2
-			"coca":6
+			"arance":2
+			"banane":5
+			"ciliege":2
+			"mele":6
 		}
 		orders=Optimize(demand_estimation,suppliers)
 		day+=1
