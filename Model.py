@@ -6,7 +6,7 @@ Class Order(object):
 		self.fixed_cost=self.supplier.fixed_cost
 		#ordered items from supplier
 		self.items={
-			"mele":3 #num di kg di ganja ordinate
+			"mele":3 #num di kg di mele ordinate
 			"banane":10
 		}
 		#time to arrive
@@ -25,9 +25,9 @@ Class Supplier(object):
 		self.supplierID=supplierID
 		self.fixed_cost
 		self.available_products={
-			"LSD":1.9, # costo di una banana dal supplier
-			"MDMA":2.7,
-			"ganja":3
+			"banane":1.9, # costo di una banana dal supplier
+			"pesche":2.7,
+			"nespole":3
 		}
 	def Discount(self,n_of_items):
 		return disc
