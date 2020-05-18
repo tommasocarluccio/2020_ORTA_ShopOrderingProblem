@@ -11,18 +11,66 @@ class Instance():
             sim_setting {[type]} -- [description]
         """
         logging.info("starting simulation...")
-        self.max_size = sim_setting['knapsack_size']
-        self.sizes = np.around(np.random.uniform(
-            sim_setting['low_size'],
-            sim_setting['high_size'],
-            sim_setting['n_items']
+        # Number of time iterations
+        self.time_period = sim_setting['time_period']
+        # Initial inventory of the shop
+        self.initial_inventory = np.around(np.random.uniform(
+            sim_setting['min_init_product'],
+            sim_setting['max_init_product'],
+            sim_setting['num_products']
         ))
-        self.profits = np.around(np.random.uniform(
-            sim_setting['low_profit'],
-            sim_setting['high_profit'],
-            sim_setting['n_items']
+        # Demand for time_period days
+        self.demand=[]
+        for i in range(self.time_period):
+            self.demand[i]= np.around(np.random.uniform(
+                    sim_setting['min_demand'],
+                    sim_setting['max_demand'],
+                    sim_setting['num_products']
+                ))
+        # Prices of the items
+        self.prices = np.around(np.random.uniform(
+            sim_setting['min_price'],
+            sim_setting['max_price'],
+            sim_setting['num_products']
         ))
-        self.n_items = sim_setting['n_items']
+        # Time steps after which each item arrives
+        self.time_steps = np.around(np.random.uniform(
+            sim_setting['min_time_steps'],
+            sim_setting['max_time_steps'],
+            sim_setting['num_products']
+        ))
+        # List of suppliers with respective fixed costs
+        self.fixed_costs = np.around(np.random.uniform(
+            sim_setting['min_fixed_cost'],
+            sim_setting['max_fixed_cost'],
+            sim_setting['num_suppliers']
+        ))
+        # Matrix with suppliers in rows and costs in columns (num_suppliers)x(num_products) 
+        self.costs=[]
+        for i in range(sim_setting['num_suppliers']):
+            self.costs[i]= np.around(np.random.uniform(
+                    sim_setting['min_cost'],
+                    sim_setting['max_cost'],
+                    sim_setting['num_products']
+                ))
+        # In this way not all suppliers have all products
+        for i in range(sim_setting['num_suppliers']):
+            for j in range(sim_setting['num_products']):
+                # Supplier i has 0.8 probability of having product j
+                if np.rand(0,1) > 0.8:
+                    self.costs[i][j]= np.nan
+        # Holding costs
+        self.holding_costs = np.around(np.random.uniform(
+            sim_setting['min_holding_cost'],
+            sim_setting['max_holding_cost'],
+            sim_setting['num_products']
+        ))
+        # Unsatisfied demand extracost
+        self.extra_costs = np.around(np.random.uniform(
+            sim_setting['min_extracost'],
+            sim_setting['max_extracost'],
+            sim_setting['num_products']
+        ))
         logging.info("simulation end")
 
     def get_data(self):
@@ -33,8 +81,13 @@ class Instance():
         """
         logging.info("getting data from instance...")
         return {
-            "profits": self.profits,
-            "sizes": self.sizes,
-            "max_size": self.max_size,
-            "n_items": self.n_items
+            "time_period": self.time_period,
+            "initial_inventory": self.initial_inventory,
+            "demand": self.demand,
+            "prices": self.prices,
+            "fixed_costs": self.fixed_costs,
+            "costs": self.costs,
+            "holding_costs": self.holding_costs,
+            "extra_costs": self.extra_costs,
+            "time_steps": self.time_steps
         }
