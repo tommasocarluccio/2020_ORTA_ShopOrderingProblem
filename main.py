@@ -4,7 +4,7 @@ import json
 import logging
 import numpy as np
 from simulator.instance import Instance
-from solver.simpleKnapsack import SimpleKnapsack
+from solver.simpleShop import SimpleShop
 from heuristic.simpleHeu import SimpleHeu
 
 
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     )
     dict_data = inst.get_data()
 
-    prb = SimpleKnapsack()
+    prb = SimpleShop()
     of_exact, sol_exact, comp_time_exact = prb.solve(
         dict_data,
         verbose=True
