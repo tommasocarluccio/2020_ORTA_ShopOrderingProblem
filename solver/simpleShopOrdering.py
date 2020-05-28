@@ -5,7 +5,7 @@ import logging
 import pulp
 
 
-class SimpleKnapsack():
+class SimpleShop():
     def __init__(self):
         pass
 
