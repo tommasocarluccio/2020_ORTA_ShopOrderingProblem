@@ -2,6 +2,7 @@ import time
 import logging
 # from pulp import *
 import pulp
+import numpy as np
 
 
 class SimpleShop():
@@ -120,25 +121,30 @@ class SimpleShop():
         of = pulp.value(prob.objective)
         comp_time = end - start
 
-
         for v in sol:
-            print (v.name, "=", v.varValue)
+           print (v.name, "=", v.varValue)
 
         print(pulp.LpStatus[prob.status])
-        """
+        sol_o = np.zeros((dict_data['num_products'], dict_data['time_period']))
+        for t in time_period:
+            for i in items:
+                result = 0
+                for j in suppliers:
+                    result += pulp.value(O[(i, j, t)])
+                sol_o[(i, t)] = result
 
-        sol = prob.variables()
-        of = pulp.value(prob.objective)
-        comp_time = end - start
+        print(sol_o)
 
-        sol_x = [0] * dict_data['num_products']
         for var in sol:
             logging.info("{} {}".format(var.name, var.varValue))
-            if "X_" in var.name:
-                sol_x[int(var.name.replace("X_", ""))] = abs(var.varValue)
+
+            if "O_" in var.name:
+                pass
+                #sol_o[int(var.name.replace("O_", ""))] = abs(var.varValue)
+
         logging.info("\n\tof: {}\n\tsol:\n{} \n\ttime:{}".format(
-            of, sol_x, comp_time)
+            of, sol_o, comp_time)
         )
         logging.info("#########")
-        """
-        return of, sol, comp_time
+
+        return of, sol_o, comp_time
