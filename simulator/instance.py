@@ -1,8 +1,9 @@
-# -*- coding: utf-8 -*-
 import logging
 import numpy as np
+import random
 
 np.random.seed(0)
+random.seed(0)
 class Instance():
     def __init__(self, sim_setting):
         """[summary]
@@ -14,6 +15,7 @@ class Instance():
         # Number of time iterations
         self.time_period = sim_setting['time_period']
         self.M=sim_setting['M']
+        self.M2 = sim_setting['M2']
 
         # Initial inventory of the shop
         self.initial_inventory = np.around(np.random.uniform(
@@ -21,10 +23,10 @@ class Instance():
             sim_setting['max_init_product'],
             sim_setting['num_products']
         ))
-        self.initial_inventory = np.array(self.initial_inventory)
-        self.inventory=np.zeros((sim_setting['time_period'],sim_setting['num_products']))
-        self.inventory[0]=self.initial_inventory
-        self.inventory=self.inventory.T
+        #self.initial_inventory = np.array(self.initial_inventory)
+        #self.inventory=np.zeros((sim_setting['time_period'],sim_setting['num_products']))
+        #self.inventory[0]=self.initial_inventory
+        #self.inventory=self.inventory.T
 
         # Demand for time_period days
         self.demand = []
@@ -62,11 +64,14 @@ class Instance():
             for j in range(sim_setting['num_products']):
                 self.costs[i] = (np.random.uniform(
                     sim_setting['min_cost'],
-                    self.prices[i],
+                    self.prices[j],
                     sim_setting['num_products']
                 ))
-                if np.random.rand(0, 1) > 0.8:
-                   self.costs[i, j] = np.nan
+        for i in range(sim_setting['num_suppliers']):
+            for j in range(sim_setting['num_products']):
+                if random.random()> 0.6:
+                   self.costs[i, j] = 10000
+
         self.costs=self.costs.T
 
 
@@ -111,7 +116,7 @@ class Instance():
         logging.info("getting data from instance...")
         return {
             "time_period": self.time_period,
-            "inventory": self.inventory,
+            "inventory": self.initial_inventory,
             "demand": self.demand,
             "prices": self.prices,
             "fixed_costs": self.fixed_costs,
@@ -121,5 +126,6 @@ class Instance():
             "time_steps": self.time_steps,
             "num_products": self.num_products,
             "num_suppliers": self.num_suppliers,
-            "M": self.M
+            "M": self.M,
+            "M2": self.M2
         }
