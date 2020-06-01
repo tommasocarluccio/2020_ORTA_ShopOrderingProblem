@@ -30,51 +30,81 @@ class SimpleShop():
         suppliers=range(dict_data['num_suppliers'])
         time_period=range(dict_data['time_period'])
         #print(dict_data['costs'][14])
-
         problem_name = "shop ordering"
+        prob = pulp.LpProblem(problem_name, pulp.LpMaximize)
 
-        prob = pulp.LpProblem(problem_name, pulp.LpMinimize)
-        O = pulp.LpVariable.dicts(
-            "O", [(i, j, t) for i in items for j in suppliers for t in time_period],
-            lowBound=0,
-            cat=pulp.LpInteger
-        )
         y = pulp.LpVariable.dicts(
             "y", [(j, t) for j in suppliers for t in time_period],
             cat=pulp.LpBinary
         )
+        y2 = pulp.LpVariable.dicts(
+            "y2", [(i, t) for i in items for t in time_period],
+            cat=pulp.LpBinary
+        )
+
         b = pulp.LpVariable.dicts(
-            "b", [(i, t) for i in items for t in time_period],
+            "b", [(i, t) for i in items for t in time_period], 0,
+            cat=pulp.LpInteger
+        )
+        I = pulp.LpVariable.dicts("I", [(i,t) for i in items for t in time_period], lowBound=0, cat=pulp.LpInteger)
+
+        sold = pulp.LpVariable.dicts(
+            "sold", [(i, t) for i in items for t in time_period], 0,
             cat=pulp.LpInteger
         )
 
-        # LpContinuous
+        O= pulp.LpVariable.dicts("O", [(i,j,t) for i in items for j in suppliers for t in time_period],0, cat = pulp.LpInteger)
+        """
+        prob += pulp.lpSum(min(dict_data['demand'][(i, t)], dict_data['inventory'][i])*dict_data['prices'][i] for i in items for t in time_period) -\
+                pulp.lpSum(dict_data['fixed_costs'][j]*y[(j,t)] for j in suppliers for t in time_period) - \
+                pulp.lpSum(dict_data['costs'][(i, j)]*O[(i,j,t)] for i in items for j in suppliers for t in time_period) - \
+                pulp.lpSum(dict_data['extra_costs'][i]*b[(i,t)] for i in items for t in time_period) - \
+                pulp.lpSum(dict_data['holding_costs'][i]*dict_data['inventory'][i] for i in items)
+        """
+        prob += pulp.lpSum(dict_data['prices'][i]*sold[(i,t)] for i in items for t in time_period) -\
+                pulp.lpSum(dict_data['fixed_costs'][j] * y[(j, t)] for j in suppliers for t in time_period) - \
+                pulp.lpSum(dict_data['costs'][(i,j)] * O[(i, j, t)] for i in items for j in suppliers for t in time_period) - \
+                pulp.lpSum(dict_data['extra_costs'][i] * b[(i, t)] for i in items for t in time_period) - \
+                pulp.lpSum(dict_data['holding_costs'][i] * I[(i,t)] for i in items for t in time_period)
+                #pulp.lpSum([(dict_data['inventory'][(i, t - 1)] - dict_data['demand'][(i, t)] + sum([O[(i, j, t - dict_data['time_steps'][i] if t - dict_data['time_steps'][i] > 0 else 0)] for j in suppliers])) * dict_data['holding_costs'][i] for i in items for t in time_period])
 
-        prob += pulp.lpSum([dict_data['fixed_costs'][j] * y[(j, t)] for j in suppliers for t in time_period]) +\
-                pulp.lpSum([dict_data['costs'][(i, j)]*O[(i, j, t)] for i in items for j in suppliers for t in time_period]) + \
-                pulp.lpSum([(dict_data['inventory'][(i, t-1)]-dict_data['demand'][(i, t)]+sum([O[(i, j, t-dict_data['time_steps'][i] if t-dict_data['time_steps'][i] > 0 else 0)] for j in suppliers])) * dict_data['holding_costs'][i] for i in items for t in time_period]) + \
-                pulp.lpSum([dict_data['extra_costs'][i] * b[(i, t)] for i in items for t in time_period]), "obj_func"
-        #prob += pulp.lpSum([dict_data['sizes'][i] * x[i] for i in items]) <= dict_data['max_size'], "max_vol"
-        #prob+= pulp.lpSum([O[(i, j, t)] for i in items for j in suppliers for t in time_period]) >=0
-        #pulp.lpSum([dict_data['inventory'][(i, t)] * dict_data['holding_costs'][i] for i in items for t in time_period]) +\
-
-        for i in items:
-            for j in suppliers:
-                for t in time_period:
-                    prob += O[(i, j, t)] >=0
-
-        for j in suppliers:
-            for t in time_period:
-                prob += pulp.lpSum([O[(i, j, t)]for i in items]) <= dict_data['M']*y[(j, t)]
-                prob += b[(i, t)] == (max(dict_data['demand'][(i, t)]-dict_data['inventory'][(i, t)],0))
         """
         for t in time_period:
             for i in items:
-                dict_data['inventory'][(i, t)]= dict_data['inventory'][(i, t-1)] +\
-                                                O[(i, j, t-dict_data['time_steps'][i] if t-dict_data['time_steps'][i] > 0 else 0 )]-\
-                                                dict_data['demand'][i]
+                prob += pulp.lpSum(O[(i,j,t)] for j in suppliers) == dict_data['demand'][(i,t)]
         """
-        prob.writeLP("./logs/{}.lp".format(problem_name))
+
+        for j in suppliers:
+            for t in time_period:
+                prob += pulp.lpSum(O[i,j,t] for i in items) <= dict_data['M']*y[(j,t)]
+
+        for i in items:
+            for t in time_period:
+                prob += b[(i, t)] >= (dict_data['demand'][(i, t)] - I[(i,t)])
+
+        for i in items:
+            prob += pulp.lpSum(I[i, 0]) == dict_data['inventory'][i]
+            for t in time_period:
+                if t!=0:
+                    prob += pulp.lpSum(I[i,t]) == I[(i,t-1)] - dict_data['demand'][(i,t-1)] + pulp.lpSum(O[(i,j,t-dict_data['time_steps'][i] if t - dict_data['time_steps'][i] > 0 else 0)] for j in suppliers )
+
+        """
+        for i in items:
+            for t in time_period:
+                t=t - dict_data['time_steps'][i]
+                if t<0:
+                    t=0
+                prob += dict_data['inventory'][i]== dict_data['inventory'][i] - dict_data['demand'][(i, t)]
+        """
+        for i in items:
+            for t in time_period:
+                prob += dict_data['demand'][(i, t)] - I[(i, t)] <= dict_data['M'] * y2[(i, t)]
+                prob += I[(i, t)] - dict_data['demand'][(i, t)] <= dict_data['M'] * (1 - y2[(i, t)])
+
+                prob += sold[(i, t)] <= I[(i, t)]
+                prob += sold[(i, t)] <= dict_data['demand'][(i, t)]
+                prob += sold[(i, t)] >= I[(i, t)] - dict_data['M']*(1 - y2[(i, t)])
+                prob += sold[(i, t)] >= dict_data['demand'][(i, t)]- dict_data['M']*(y2[(i, t)])
 
         msg_val = 1 if verbose else 0
         start = time.time()
@@ -90,9 +120,11 @@ class SimpleShop():
         of = pulp.value(prob.objective)
         comp_time = end - start
 
+
         for v in sol:
             print (v.name, "=", v.varValue)
-        #print("Total Cost = ", varValue(prob.objective))
+
+        print(pulp.LpStatus[prob.status])
         """
 
         sol = prob.variables()
@@ -109,5 +141,4 @@ class SimpleShop():
         )
         logging.info("#########")
         """
-        #return of, sol_x, comp_time
-        return 0,0,0
+        return of, sol, comp_time
