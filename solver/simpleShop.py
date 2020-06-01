@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import time
 import logging
 # from pulp import *
@@ -32,7 +31,9 @@ class SimpleShop():
         time_period=range(dict_data['time_period'])
         #print(dict_data['costs'][14])
 
+        problem_name = "shop ordering"
 
+        prob = pulp.LpProblem(problem_name, pulp.LpMinimize)
         O = pulp.LpVariable.dicts(
             "O", [(i, j, t) for i in items for j in suppliers for t in time_period],
             lowBound=0,
@@ -49,9 +50,6 @@ class SimpleShop():
 
         # LpContinuous
 
-        problem_name = "shop ordering"
-
-        prob = pulp.LpProblem(problem_name, pulp.LpMinimize)
         prob += pulp.lpSum([dict_data['fixed_costs'][j] * y[(j, t)] for j in suppliers for t in time_period]) +\
                 pulp.lpSum([dict_data['costs'][(i, j)]*O[(i, j, t)] for i in items for j in suppliers for t in time_period]) + \
                 pulp.lpSum([(dict_data['inventory'][(i, t-1)]-dict_data['demand'][(i, t)]+sum([O[(i, j, t-dict_data['time_steps'][i] if t-dict_data['time_steps'][i] > 0 else 0)] for j in suppliers])) * dict_data['holding_costs'][i] for i in items for t in time_period]) + \
@@ -88,6 +86,14 @@ class SimpleShop():
         solver.solve(prob)
         end = time.time()
         logging.info("\t Status: {}".format(pulp.LpStatus[prob.status]))
+        sol = prob.variables()
+        of = pulp.value(prob.objective)
+        comp_time = end - start
+
+        for v in sol:
+            print (v.name, "=", v.varValue)
+        #print("Total Cost = ", varValue(prob.objective))
+        """
 
         sol = prob.variables()
         of = pulp.value(prob.objective)
@@ -102,4 +108,6 @@ class SimpleShop():
             of, sol_x, comp_time)
         )
         logging.info("#########")
-        return of, sol_x, comp_time
+        """
+        #return of, sol_x, comp_time
+        return 0,0,0
