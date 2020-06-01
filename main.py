@@ -54,7 +54,7 @@ if __name__ == '__main__':
         "heu", of_heu, sol_heu, comp_time_heu
     ))
     """
-    file_output.write("{}, {}, {}, {}\n".format(
+    file_output.write("{}\nPROFIT= {}\n ORDER FOR EACH DAY\n{}\n TIME {}\n".format(
         "exact", of_exact, sol_exact, comp_time_exact
     ))
     file_output.close()
