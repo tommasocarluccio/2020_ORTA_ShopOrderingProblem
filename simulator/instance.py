@@ -105,6 +105,7 @@ class Instance():
 
         self.num_products=sim_setting['num_products']
         self.num_suppliers = sim_setting['num_suppliers']
+        self.max_time_steps=sim_setting['max_time_steps']
         logging.info("simulation end")
 
     def get_data(self):
@@ -126,6 +127,7 @@ class Instance():
             "time_steps": self.time_steps,
             "num_products": self.num_products,
             "num_suppliers": self.num_suppliers,
+            "max_time_steps": self.max_time_steps,
             "M": self.M,
             "M2": self.M2
         }
