@@ -30,30 +30,34 @@ class SimpleShop():
         items = range(dict_data['num_products'])
         suppliers=range(dict_data['num_suppliers'])
         time_period=range(dict_data['time_period'])
-        #print(dict_data['costs'][14])
+        
         problem_name = "shop ordering"
-        prob = pulp.LpProblem(problem_name, pulp.LpMaximize)
-
+        prob = pulp.LpProblem(problem_name, pulp.LpMaximize) #maximize profit
+        
+        #y is binary variable that is 1 if a order to the supplier j at time t is performed
         y = pulp.LpVariable.dicts(
             "y", [(j, t) for j in suppliers for t in time_period],
             cat=pulp.LpBinary
         )
+        #y2 is a auxiliary binary variable to linearize minimum function (between inventory and demand of product i at time t)
         y2 = pulp.LpVariable.dicts(
             "y2", [(i, t) for i in items for t in time_period],
             cat=pulp.LpBinary
         )
-
+        #integer variable concernig the extra-cost due to unsatisfied demand 
         b = pulp.LpVariable.dicts(
             "b", [(i, t) for i in items for t in time_period], 0,
             cat=pulp.LpInteger
         )
+        #inventory for each product i at time t, depending on inventory of t-1, demand and arrived orders
         I = pulp.LpVariable.dicts("I", [(i,t) for i in items for t in time_period], lowBound=0, cat=pulp.LpInteger)
-
+        
+        #variable to compute the minimum between inventory and demand, i.e. the amount of product i sold at time t
         sold = pulp.LpVariable.dicts(
             "sold", [(i, t) for i in items for t in time_period], 0,
             cat=pulp.LpInteger
         )
-
+        #order for product i for each time t
         O= pulp.LpVariable.dicts("O", [(i,j,t) for i in items for j in suppliers for t in time_period],0, cat = pulp.LpInteger)
         """
         prob += pulp.lpSum(min(dict_data['demand'][(i, t)], dict_data['inventory'][i])*dict_data['prices'][i] for i in items for t in time_period) -\
@@ -74,6 +78,7 @@ class SimpleShop():
             for i in items:
                 prob += pulp.lpSum(O[(i,j,t)] for j in suppliers) == dict_data['demand'][(i,t)]
         """
+        #Set of constraints
 
         for j in suppliers:
             for t in time_period:
@@ -89,14 +94,6 @@ class SimpleShop():
                 if t!=0:
                     prob += pulp.lpSum(I[i,t]) == I[(i,t-1)] - dict_data['demand'][(i,t-1)] + pulp.lpSum(O[(i,j,t-dict_data['time_steps'][i] if t - dict_data['time_steps'][i] > 0 else 0)] for j in suppliers )
 
-        """
-        for i in items:
-            for t in time_period:
-                t=t - dict_data['time_steps'][i]
-                if t<0:
-                    t=0
-                prob += dict_data['inventory'][i]== dict_data['inventory'][i] - dict_data['demand'][(i, t)]
-        """
         for i in items:
             for t in time_period:
                 prob += dict_data['demand'][(i, t)] - I[(i, t)] <= dict_data['M'] * y2[(i, t)]
