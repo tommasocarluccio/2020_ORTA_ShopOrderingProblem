@@ -23,10 +23,11 @@ class Instance():
             sim_setting['max_init_product'],
             sim_setting['num_products']
         ))
+        print(self.initial_inventory)
         #self.initial_inventory = np.array(self.initial_inventory)
         #self.inventory=np.zeros((sim_setting['time_period'],sim_setting['num_products']))
         #self.inventory[0]=self.initial_inventory
-        #self.inventory=self.inventory.T
+        self.initial_inventory=self.initial_inventory.T
 
         # Demand for time_period days
         self.demand = []
@@ -39,6 +40,21 @@ class Instance():
 
         self.demand=np.array(self.demand)
         self.demand=self.demand.T
+        print(self.demand)
+        #self.pre_order=np.zeros((sim_setting['num_products'], sim_setting['max_time_steps']))
+        self.pre_order = []
+        #np.random.seed(1)
+        for i in range(self.time_period):
+            self.pre_order.append(np.around(np.random.uniform(
+                sim_setting['min_pre_order'],
+                sim_setting['max_pre_order'],
+                sim_setting['num_products']
+            )))
+        self.pre_order = np.array(self.pre_order)
+        self.pre_order = self.pre_order.T
+        #print(self.pre_order)
+        self.inventory = np.zeros((sim_setting['num_products'], sim_setting['max_time_steps']))
+
 
         # Prices of the items
         self.prices = np.around(np.random.uniform(
@@ -46,6 +62,7 @@ class Instance():
             sim_setting['max_price'],
             sim_setting['num_products']
         ))
+        print(self.prices)
         # Time steps after which each item arrives
         self.time_steps = np.around(np.random.uniform(
             sim_setting['min_time_steps'],
@@ -53,11 +70,15 @@ class Instance():
             sim_setting['num_products']
         ))
         # List of suppliers with respective fixed costs
+        """
         self.fixed_costs = np.around(np.random.uniform(
             sim_setting['min_fixed_cost'],
             sim_setting['max_fixed_cost'],
             sim_setting['num_suppliers']
         ))
+        """
+        self.fixed_costs=[1,5000,3000]
+        self.fixed_costs=np.array(self.fixed_costs)
         # Matrix with suppliers in rows and costs in columns (num_suppliers)x(num_products)
         self.costs = np.zeros((sim_setting['num_suppliers'], sim_setting['num_products']))
         for i in range(sim_setting['num_suppliers']):
@@ -69,10 +90,12 @@ class Instance():
                 ))
         for i in range(sim_setting['num_suppliers']):
             for j in range(sim_setting['num_products']):
-                if random.random()> 0.6:
-                   self.costs[i, j] = 10000
+                if random.random()> 0.9:
+                   self.costs[i, j] = 1000000
+
 
         self.costs=self.costs.T
+        #print(self.costs)
 
 
         """
@@ -103,6 +126,24 @@ class Instance():
             sim_setting['num_products']
         ))
 
+        self.discount=[]
+        for i in range(sim_setting['num_suppliers']):
+
+            #c1l=0
+            #c1h= random.randint(10,20)
+            u1=random.randint(1,5)
+            #c2l=c1h
+            #c2h=random.randint(c2l,c2l+15)
+            u2=random.randint(10,15)
+            #c3l=c2h
+            #c3h=random.randint(c3l,c3l+20)
+            u3=random.randint(15, 20)
+            a = [u1,u2,u3]
+            self.discount.append(a)
+        self.discount = np.array(self.discount)
+        print(self.discount)
+
+
         self.num_products=sim_setting['num_products']
         self.num_suppliers = sim_setting['num_suppliers']
         self.max_time_steps=sim_setting['max_time_steps']
@@ -117,7 +158,7 @@ class Instance():
         logging.info("getting data from instance...")
         return {
             "time_period": self.time_period,
-            "inventory": self.initial_inventory,
+            "initial_inventory": self.initial_inventory,
             "demand": self.demand,
             "prices": self.prices,
             "fixed_costs": self.fixed_costs,
@@ -129,5 +170,9 @@ class Instance():
             "num_suppliers": self.num_suppliers,
             "max_time_steps": self.max_time_steps,
             "M": self.M,
-            "M2": self.M2
+            "pre_order": self.pre_order,
+            "M2": self.M2,
+            "discount":self.discount,
+            "Inventory_new": self.inventory
+
         }
