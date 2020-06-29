@@ -28,7 +28,7 @@ if __name__ == '__main__':
         sim_setting
     )
     dict_data = inst.get_data()
-    print(dict_data)
+    #print(dict_data)
 
     prb = SimpleShop()
     of_exact, sol_exact, comp_time_exact = prb.solve(
