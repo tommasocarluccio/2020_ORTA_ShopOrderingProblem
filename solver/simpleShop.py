@@ -122,7 +122,7 @@ class SimpleShop():
                 for l in batch:
                     #prob += discount[(j,t)] == self.get_discount(pulp.lpSum(O[(i, j, t)] for i in items))
                     #prob += discount[(j,t)] == (pulp.lpSum(O[(i, j, t)] for i in items))
-                    
+
                     # batch limits
                     if l==0:
                         c_min=0
@@ -134,8 +134,8 @@ class SimpleShop():
                         c_min=4
                         c_max=100000
 
-                    #prob += c_min*w[(j,l,t)]<= pulp.lpSum(O[(i, j, t)] for i in items)
-                    #prob += pulp.lpSum(O[(i, j, t)] for i in items) <= c_max*w[(j,l,t)]
+                    prob += c_min*w[(j,l,t)]<= pulp.lpSum(O[(i, j, t)] for i in items)
+                    prob += pulp.lpSum(O[(i, j, t)] for i in items) <= c_max*w[(j,l,t)]
 
 
         msg_val = 1 if verbose else 0
