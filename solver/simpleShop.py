@@ -32,7 +32,7 @@ class SimpleShop():
         items = range(dict_data['num_products'])
         suppliers = range(dict_data['num_suppliers'])
         time_period = range(dict_data['time_period'])
-        batch=range(1,3)
+        batch=[0, 1, 2]
         initial_inventory=dict_data['initial_inventory']
         pre_order=dict_data['pre_order']
 
@@ -55,7 +55,7 @@ class SimpleShop():
             cat=pulp.LpInteger
         )
         w = pulp.LpVariable.dicts(
-            "w", [(j,l, t) for j in suppliers for l in batch for t in time_period],
+            "w", [(j,l,t) for j in suppliers for l in batch for t in time_period],
             cat=pulp.LpBinary
         )
         # inventory for each product i at time t, depending on inventory of t-1, demand and arrived orders
@@ -63,7 +63,6 @@ class SimpleShop():
         I= pulp.LpVariable.dicts("I", [(i, t) for i in items for t in time_period],lowBound=0, cat=pulp.LpInteger)
 
         #I2 = pulp.LpVariable.dicts("I", (items, time_period) , lowBound=0, cat=pulp.LpInteger)
-
 
         # variable to compute the minimum between inventory and demand, i.e. the amount of product i sold at time t
         sold = pulp.LpVariable.dicts(
@@ -74,18 +73,18 @@ class SimpleShop():
         # O= pulp.LpVariable.dicts("O", [(i,j,t) for i in items for j in suppliers for t in time_period],0, cat = pulp.LpInteger)
         O = pulp.LpVariable.dicts("O", [(i, j, t) for i in items for j in suppliers for t in time_period], 0, cat=pulp.LpInteger)
 
+        # Discount function
+        discount= pulp.LpVariable.dicts("discount", [(j, t) for j in suppliers for t in time_period],lowBound=0, cat=pulp.LpInteger)
+
+
         prob += pulp.lpSum(dict_data['prices'][i] * sold[(i, t)] for i in items for t in time_period)-\
                 pulp.lpSum(dict_data['fixed_costs'][j] * y[(j, t)] for j in suppliers for t in time_period) - \
                 pulp.lpSum(dict_data['costs'][(i, j)] * O[(i, j, t)] for i in items for j in suppliers for t in time_period) - \
                 pulp.lpSum(dict_data['extra_costs'][i] * b[(i, t)] for i in items for t in time_period) - \
-                pulp.lpSum(dict_data['holding_costs'][i] * I[(i, t)] for i in items for t in time_period)
+                pulp.lpSum(dict_data['holding_costs'][i] * I[(i, t)] for i in items for t in time_period) #+ \
+                #pulp.lpSum( discount[(j, t)] for j in suppliers for t in time_period )
 
         # Set of constraints
-
-
-        for j in suppliers:
-            for t in range(0,dict_data['time_period']):
-                prob += pulp.lpSum(O[i, j, t] for i in items) <= dict_data['M'] * y[(j, t)]
         for j in suppliers:
             for t in range(0,dict_data['time_period']):
                 prob += pulp.lpSum(O[i, j, t] for i in items) <= dict_data['M'] * y[(j, t)]
@@ -117,9 +116,31 @@ class SimpleShop():
                 #prob += sold[(i, t)] >= I[(i, t)] - dict_data['M'] * (1 - y2[(i, t)])
                 #prob += sold[(i, t)] >= dict_data['demand'][(i, t)] - dict_data['M'] * (y2[(i, t)])
 
+        # Discount function
+        for j in suppliers:
+            for t in time_period:
+                for l in batch:
+                    #prob += discount[(j,t)] == self.get_discount(pulp.lpSum(O[(i, j, t)] for i in items))
+                    #prob += discount[(j,t)] == (pulp.lpSum(O[(i, j, t)] for i in items))
+                    
+                    # batch limits
+                    if l==0:
+                        c_min=0
+                        c_max=1
+                    elif l==1:
+                        c_min=2
+                        c_max=3
+                    elif l==2:
+                        c_min=4
+                        c_max=100000
+
+                    #prob += c_min*w[(j,l,t)]<= pulp.lpSum(O[(i, j, t)] for i in items)
+                    #prob += pulp.lpSum(O[(i, j, t)] for i in items) <= c_max*w[(j,l,t)]
+
+
         msg_val = 1 if verbose else 0
         start = time.time()
-        solver = pulp.solvers.COIN_CMD(
+        solver = pulp.solvers.COIN_CMD( 
             msg=msg_val,
             maxSeconds=time_limit,
             fracGap=gap
@@ -132,8 +153,8 @@ class SimpleShop():
         of = pulp.value(prob.objective)
         comp_time = end - start
 
-        #for v in sol:
-           #print(v.name, "=", v.varValue)
+        for v in sol:
+           print(v.name, "=", v.varValue)
 
         print(pulp.LpStatus[prob.status])
         sol_o = np.zeros((dict_data['num_products'], dict_data['time_period']))
@@ -159,3 +180,17 @@ class SimpleShop():
         logging.info("#########")
 
         return of, sol_o, comp_time
+
+    # u function
+    def get_discount(self, tot_order):
+        # made to be comparable to the fixed cost but slightly less
+        discount=0      
+        if tot_order <= 2:
+            discount = 0
+        if tot_order <= 5 and tot_order >= 2:
+            discount = 3
+        if tot_order <= 9 and tot_order >= 5:
+            discount = 4
+        if tot_order >= 9:
+            discount = 3
+        return tot_order

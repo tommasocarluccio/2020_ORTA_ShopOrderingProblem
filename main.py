@@ -5,14 +5,14 @@ import logging
 import numpy as np
 from simulator.instance import Instance
 from solver.simpleShop import SimpleShop
-from heuristic.simpleHeu import SimpleHeu
+#from heuristic.simpleHeu import SimpleHeu
 
 
 np.random.seed(0)
 
 
 if __name__ == '__main__':
-    log_name = "./logs/main.log"
+    log_name = "./main.log"
     logging.basicConfig(
         filename=log_name,
         format='%(asctime)s %(levelname)s: %(message)s',

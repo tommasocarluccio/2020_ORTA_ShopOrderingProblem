@@ -91,7 +91,7 @@ class Instance():
         for i in range(sim_setting['num_suppliers']):
             for j in range(sim_setting['num_products']):
                 if random.random()> 0.9:
-                   self.costs[i, j] = 1000000
+                   self.costs[i, j] = 1000000  # In order to avoid NaN (would never choose this item: too costly)
 
 
         self.costs=self.costs.T
@@ -113,6 +113,7 @@ class Instance():
                     self.costs[i][j] = np.nan
         """
         #print(self.costs[14])
+
         # Holding costs
         self.holding_costs = np.around(np.random.uniform(
             sim_setting['min_holding_cost'],
