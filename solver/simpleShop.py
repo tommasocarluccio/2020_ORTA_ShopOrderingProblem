@@ -54,10 +54,11 @@ class SimpleShop():
             "b", [(i, t) for i in items for t in time_period], 0,
             cat=pulp.LpInteger
         )
-        w = pulp.LpVariable.dicts(
-            "w", [(j,l,t) for j in suppliers for l in batch for t in time_period],
-            cat=pulp.LpBinary
-        )
+        w = pulp.LpVariable.dicts("w", [(j,l,t) for j in suppliers for l in batch for t in time_period], cat=pulp.LpBinary)
+
+        # Needed for constraint: https://math.stackexchange.com/questions/3029175/question-to-the-solution-of-indicator-variable-if-x-is-in-specific-range?noredirect=1&lq=1
+        delta = pulp.LpVariable.dicts("delta", [(j,l,t) for j in suppliers for l in batch for t in time_period], cat=pulp.LpBinary)
+        
         # inventory for each product i at time t, depending on inventory of t-1, demand and arrived orders
         #I = pulp.LpVariable.dicts("I", [(i, t) for i in items for t in time_period], lowBound=0, cat=pulp.LpInteger)
         I= pulp.LpVariable.dicts("I", [(i, t) for i in items for t in time_period],lowBound=0, cat=pulp.LpInteger)
@@ -81,8 +82,8 @@ class SimpleShop():
                 pulp.lpSum(dict_data['fixed_costs'][j] * y[(j, t)] for j in suppliers for t in time_period) - \
                 pulp.lpSum(dict_data['costs'][(i, j)] * O[(i, j, t)] for i in items for j in suppliers for t in time_period) - \
                 pulp.lpSum(dict_data['extra_costs'][i] * b[(i, t)] for i in items for t in time_period) - \
-                pulp.lpSum(dict_data['holding_costs'][i] * I[(i, t)] for i in items for t in time_period) #+ \
-                #pulp.lpSum( discount[(j, t)] for j in suppliers for t in time_period )
+                pulp.lpSum(dict_data['holding_costs'][i] * I[(i, t)] for i in items for t in time_period) + \
+                pulp.lpSum( discount[(j, t)] for j in suppliers for t in time_period )
 
         # Set of constraints
         for j in suppliers:
@@ -120,23 +121,46 @@ class SimpleShop():
         for j in suppliers:
             for t in time_period:
                 for l in batch:
-                    #prob += discount[(j,t)] == self.get_discount(pulp.lpSum(O[(i, j, t)] for i in items))
-                    #prob += discount[(j,t)] == (pulp.lpSum(O[(i, j, t)] for i in items))
+                    #https://math.stackexchange.com/questions/3380904/reformulating-constraint-containing-equivalence
 
+                    M=100000000
+                    m=-M
+                    quantity= pulp.lpSum(O[(i, j, t)] for i in items)
                     # batch limits
                     if l==0:
                         c_min=0
-                        c_max=1
+                        c_max=4
+                        prob += quantity <= c_max + M*(1-w[(j,l,t)])
+                        prob += quantity >= c_max + m*w[(j,l,t)]
+
+                    # https://math.stackexchange.com/questions/3029175/question-to-the-solution-of-indicator-variable-if-x-is-in-specific-range?noredirect=1&lq=1
                     elif l==1:
-                        c_min=2
-                        c_max=3
+                        c_min=5
+                        c_max=10
+                        prob += quantity <= c_min + M*delta[(j,l,t)] + M*w[(j,l,t)]
+                        prob += quantity >= c_max - M*(1-delta[(j,l,t)]) - M*w[(j,l,t)]
+                        prob += quantity >= c_min - M*(1-w[(j,l,t)])
+                        prob += quantity <= c_max + M*(1-w[(j,l,t)])
+
                     elif l==2:
-                        c_min=4
-                        c_max=100000
+                        c_min=11
+                        c_max=1000
+                        prob += quantity <= c_min + M*w[(j,l,t)]
+                        prob += quantity >= c_min + m*(1-w[(j,l,t)])
+                # Associate appropriate discouts here: u1,u2...
+                prob += discount[(j,t)] == 0*w[(j,0,t)] + 5*w[(j,1,t)] + 10*w[(j,2,t)]
 
-                    prob += c_min*w[(j,l,t)]<= pulp.lpSum(O[(i, j, t)] for i in items)
-                    prob += pulp.lpSum(O[(i, j, t)] for i in items) <= c_max*w[(j,l,t)]
-
+        for j in suppliers:
+            for t in time_period:
+                pass
+                # w(j,0,t)= 1 --> w(j,1,t)= 0 --> w(j,2,t)= 0
+                prob += w[(j,0,t)] <= 1-w[(j,1,t)]
+                prob += w[(j,0,t)] <= 1-w[(j,2,t)]
+                prob += w[(j,1,t)] <= 1-w[(j,0,t)]
+                prob += w[(j,1,t)] <= 1-w[(j,2,t)]
+                prob += w[(j,2,t)] <= 1-w[(j,0,t)]
+                prob += w[(j,2,t)] <= 1-w[(j,1,t)]        
+                
 
         msg_val = 1 if verbose else 0
         start = time.time()
