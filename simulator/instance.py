@@ -118,9 +118,9 @@ class Instance():
         self.discount_price=[]
         for i in range(sim_setting['num_suppliers']):
 
-            u1=random.randint(1,20)
-            u2=random.randint(u1+1,100)
-            u3=random.randint(u2+1, 150)
+            u1=random.randint(1,sim_setting['c1'])
+            u2=random.randint(u1+1,sim_setting['c2'])
+            u3=random.randint(u2+1, sim_setting['c3'])
             u4 = random.randint(u3 + 1, 10000)
 
             p1 = random.randint(0, 0)
