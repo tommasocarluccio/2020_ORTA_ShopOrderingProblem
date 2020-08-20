@@ -30,8 +30,8 @@ class SimpleShop():
         suppliers = range(dict_data['num_suppliers'])
         time_period = range(dict_data['time_period'])
         batch = [0, 1, 2, 3]
-        initial_inventory=dict_data['initial_inventory']
-        pre_order=dict_data['pre_order']
+        initial_inventory = dict_data['initial_inventory']
+        pre_order = dict_data['pre_order']
 
         problem_name = "shop ordering"
         prob = pulp.LpProblem(problem_name, pulp.LpMaximize)  # maximize profit
@@ -86,17 +86,16 @@ class SimpleShop():
             cat=pulp.LpInteger
         )
         discount = pulp.LpVariable.dicts("discount", [(j, t) for j in suppliers for t in time_period], lowBound=0,
-                                         cat=pulp.LpInteger)
+                                         cat=pulp.LpContinuous)
         # order for product i for each time t
         O = pulp.LpVariable.dicts("O", [(i, j, t) for i in items for j in suppliers for t in time_period], 0, cat=pulp.LpInteger)
 
-        prob += pulp.lpSum(dict_data['prices'][i] * sold[(i, t)] for i in items for t in range(0,dict_data['time_period']))-\
+        prob += pulp.lpSum(dict_data['prices'][i] * sold[(i, t)] for i in items for t in range(0,dict_data['time_period'])) -\
                 pulp.lpSum(dict_data['fixed_costs'][j] * y[(j, t)] for j in suppliers for t in time_period) - \
                 pulp.lpSum(dict_data['costs'][(i, j)] * O[(i, j, t)] for i in items for j in suppliers for t in time_period) - \
                 pulp.lpSum(dict_data['extra_costs'][i] * b[(i, t)] for i in items for t in range(0, dict_data['time_period'])) - \
-                pulp.lpSum(dict_data['holding_costs'][i] * I[(i, t)] for i in items for t in range(0, dict_data['time_period']))+ \
-                pulp.lpSum( discount[(j, t)] for j in suppliers for t in time_period )
-
+                pulp.lpSum(dict_data['holding_costs'][i] * I[(i, t)] for i in items for t in range(0, dict_data['time_period'])) + \
+                pulp.lpSum(discount[(j, t)] for j in suppliers for t in time_period)
 
         # Set of constraints
 
@@ -155,12 +154,12 @@ class SimpleShop():
                     elif l == 1:
                         c_min1 = dict_data['u'][j][0]+1
                         c_max1 = dict_data['u'][j][1]
-                        prob += pulp.lpSum(O[(i, j, t)] for i in items) <= c_min1  + M * delta[(j, l, t)] + M * w[
+                        prob += pulp.lpSum(O[(i, j, t)] for i in items) <= c_min1 + M * delta[(j, l, t)] + M * w[
                             (j, l, t)]
                         prob += pulp.lpSum(O[(i, j, t)] for i in items) >= c_max1 - M * (1 - delta[(j, l, t)]) - M * w[
                             (j, l, t)]
-                        prob += pulp.lpSum(O[(i, j, t)] for i in items) >= c_min1  - M * (1 - w[(j, l, t)])
-                        prob += pulp.lpSum(O[(i, j, t)] for i in items) <= c_max1  + M * (1 - w[(j, l, t)])
+                        prob += pulp.lpSum(O[(i, j, t)] for i in items) >= c_min1 - M * (1 - w[(j, l, t)])
+                        prob += pulp.lpSum(O[(i, j, t)] for i in items) <= c_max1 + M * (1 - w[(j, l, t)])
 
                     elif l == 2:
                         c_min2 = dict_data['u'][j][1]+1
@@ -178,10 +177,12 @@ class SimpleShop():
                         prob += pulp.lpSum(O[(i, j, t)] for i in items) <= c_min3 + M * w[(j, l, t)]
                         prob += pulp.lpSum(O[(i, j, t)] for i in items) >= c_min3 + m * (1 - w[(j, l, t)])
                 # Associate appropriate discounts here: u1,u2...
-                prob += discount[(j, t)] == (dict_data['discount_price'][j][0] * w[(j, 0, t)] +
-                                             dict_data['discount_price'][j][1] * w[(j, 1, t)] +
-                                             dict_data['discount_price'][j][2] * w[(j, 2, t)] +
-                                             dict_data['discount_price'][j][3] * w[(j, 3, t)])
+
+                prob += discount[(j, t)] == (dict_data['discount_price'][j][0]*0.01*dict_data['fixed_costs'][j] * w[(j, 0, t)] +
+                                             dict_data['discount_price'][j][1]*0.01*dict_data['fixed_costs'][j] * w[(j, 1, t)] +
+                                             dict_data['discount_price'][j][2]*0.01*dict_data['fixed_costs'][j] * w[(j, 2, t)] +
+                                             dict_data['discount_price'][j][3]*0.01*dict_data['fixed_costs'][j] * w[(j, 3, t)])
+
 
         for j in suppliers:
             for t in time_period:
