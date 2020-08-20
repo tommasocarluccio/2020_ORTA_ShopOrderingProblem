@@ -1,10 +1,10 @@
 {
-	"num_products": 1,
+	"num_products": 2,
 	"min_price":10,
 	"max_price":50,
 	"num_suppliers": 3,
 	"min_cost":1,
-	"max_cost":1,
+	"max_cost":10,
 	"time_period":5,
 	"min_fixed_cost":60,
 	"max_fixed_cost": 100,
