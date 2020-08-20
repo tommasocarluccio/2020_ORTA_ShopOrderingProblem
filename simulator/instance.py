@@ -3,7 +3,7 @@ import numpy as np
 import random
 
 np.random.seed(0)
-random.seed(0)
+random.seed(1)
 class Instance():
     def __init__(self, sim_setting):
         """[summary]
@@ -23,8 +23,8 @@ class Instance():
             sim_setting['max_init_product'],
             sim_setting['num_products']
         ))
-        print(self.initial_inventory)
-        self.initial_inventory=self.initial_inventory.T
+        print("Initial inventory:\n", self.initial_inventory)
+        self.initial_inventory = self.initial_inventory.T
 
         # Demand for time_period days
         self.demand = []
@@ -37,13 +37,13 @@ class Instance():
             )))
 
         self.demand=np.array(self.demand)
-        #self.demand[0] = 0
+        # self.demand[0] = 0
         self.demand=self.demand.T
-        print(self.demand)
+        print("Demand:\n", self.demand)
 
-        #self.pre_order=np.zeros((sim_setting['num_products'], sim_setting['max_time_steps']))
+        # self.pre_order=np.zeros((sim_setting['num_products'], sim_setting['max_time_steps']))
         self.pre_order = []
-        #np.random.seed(1)
+        # np.random.seed(1)
         for i in range(self.time_period):
             self.pre_order.append(np.around(np.random.uniform(
                 sim_setting['min_pre_order'],
@@ -52,16 +52,17 @@ class Instance():
             )))
         self.pre_order = np.array(self.pre_order)
         self.pre_order = self.pre_order.T
-        print(self.pre_order)
+        print("Pre-order:\n", self.pre_order)
         # self.inventory = np.zeros((sim_setting['num_products'], sim_setting['max_time_steps']))
 
         # Prices of the items
+
         self.prices = np.around(np.random.uniform(
             sim_setting['min_price'],
             sim_setting['max_price'],
             sim_setting['num_products']
         ))
-        print(self.prices)
+        print("Prices:\n", self.prices)
 
         # Time steps after which each item arrives
         self.time_steps = np.around(np.random.uniform(
@@ -69,7 +70,7 @@ class Instance():
             sim_setting['max_time_steps'],
             sim_setting['num_products']
         ))
-        # print(self.time_steps)
+        print("Time steps:\n", self.time_steps)
 
         # List of suppliers with respective fixed costs
 
@@ -79,26 +80,25 @@ class Instance():
             sim_setting['num_suppliers']
         ))
 
-        #self.fixed_costs=[1,5000,3000]
-        #self.fixed_costs = np.array(self.fixed_costs)
+        # self.fixed_costs=[1,5000,3000]
+        self.fixed_costs = np.array(self.fixed_costs)
+        print("Fixed Costs:\n", self.fixed_costs)
 
         # Matrix with suppliers in rows and costs in columns (num_suppliers)x(num_products)
         self.costs = np.zeros((sim_setting['num_suppliers'], sim_setting['num_products']))
+
         for i in range(sim_setting['num_suppliers']):
             for j in range(sim_setting['num_products']):
-                self.costs[i] = (np.random.uniform(
-                    sim_setting['min_cost'],
-                    self.prices[j],
-                    #sim_setting['max_cost'],
-                    sim_setting['num_products']
-                ))
+                self.costs[i,j]= random.randint(1,self.prices[j]-1)
+
         for i in range(sim_setting['num_suppliers']):
             for j in range(sim_setting['num_products']):
-                if random.random()> 0.9:
+                if random.random() > 0.9:
                    self.costs[i, j] = 1000000  # In order to avoid NaN (would never choose this item: too costly)
 
         self.costs = self.costs.T
-        print(self.costs)
+        self.costs[1,0] = 10
+        print("Costs (product x supplier):\n", self.costs)
 
         # Holding costs
         self.holding_costs = np.around(np.random.uniform(
@@ -114,13 +114,13 @@ class Instance():
         ))
 
         #discount function
-        self.u=[]
-        self.discount_price=[]
+        self.u = []
+        self.discount_price = []
         for i in range(sim_setting['num_suppliers']):
 
-            u1=random.randint(1,sim_setting['c1'])
-            u2=random.randint(u1+1,sim_setting['c2'])
-            u3=random.randint(u2+1, sim_setting['c3'])
+            u1 = random.randint(1, sim_setting['c1'])
+            u2 = random.randint(u1+1, sim_setting['c2'])
+            u3 = random.randint(u2+1, sim_setting['c3'])
             u4 = random.randint(u3 + 1, 10000)
 
             p1 = random.randint(0, 0)
@@ -128,15 +128,16 @@ class Instance():
             p3 = random.randint(31, 50)
             p4 = random.randint(51, 70)
 
-            a = [u1,u2,u3,u4]
+            a = [u1, u2, u3, u4]
             b = [p1, p2, p3, p4]
 
             self.u.append(a)
             self.discount_price.append(b)
         self.u = np.array(self.u)
         self.discount_price = np.array(self.discount_price)
-        print(self.u)
-        print(self.discount_price)
+        self.discount_price[0, 3] = 2000
+        print("Discount Blocks:\n", self.u)
+        print("Discount percentage % on shipping cost:\n", self.discount_price)
 
         self.num_products=sim_setting['num_products']
         self.num_suppliers = sim_setting['num_suppliers']
