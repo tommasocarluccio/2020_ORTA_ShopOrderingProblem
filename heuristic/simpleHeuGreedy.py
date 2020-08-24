@@ -32,7 +32,7 @@ class SimpleHeuGreedy():
         items = range(dict_data['num_products'])
         suppliers = range(dict_data['num_suppliers'])
         time_period = range(dict_data['time_period'])
-        batch=[0, 1, 2]
+        batch=[0, 1, 2, 3]
         initial_inventory=dict_data['initial_inventory']
         pre_order=dict_data['pre_order']
 
@@ -60,22 +60,19 @@ class SimpleHeuGreedy():
             b = pulp.LpVariable.dicts("b", [(i) for i in items], 0, cat=pulp.LpInteger)
 
             # variable to compute the minimum between inventory and demand, i.e. the amount of product i sold at time t
-            sold = pulp.LpVariable.dicts("sold", [(i) for i in items], 0, cat=pulp.LpInteger)
-
+            sold = pulp.LpVariable.dicts("sold", [(i) for i in items],cat=pulp.LpInteger)
+            
             # order for product i for each time t
             O = pulp.LpVariable.dicts("O", [(i, j) for i in items for j in suppliers], 0, cat=pulp.LpInteger)
 
-            # used in constraint 3
-            O2 = pulp.LpVariable.dicts("O2", [(i) for i in items], cat=pulp.LpInteger)
-
             # Discount function
-            discount= pulp.LpVariable.dicts("discount", [(j) for j in suppliers],lowBound=0, cat=pulp.LpInteger)
+            discount= pulp.LpVariable.dicts("discount", [(j) for j in suppliers],lowBound=0, cat=pulp.LpContinuous)
 
             # Needed for discount
             w = pulp.LpVariable.dicts("w", [(j,l) for j in suppliers for l in batch], cat=pulp.LpBinary)
 
             # Needed for "Heuristic Constraint 1"
-            k = pulp.LpVariable.dicts("k", [(i) for i in items], cat=pulp.LpBinary)
+            #k = pulp.LpVariable.dicts("k", [(i) for i in items], cat=pulp.LpBinary)
 
             # Needed for constraint: https://math.stackexchange.com/questions/3029175/question-to-the-solution-of-indicator-variable-if-x-is-in-specific-range?noredirect=1&lq=1
             delta = pulp.LpVariable.dicts("delta", [(j,l) for j in suppliers for l in batch], cat=pulp.LpBinary)
@@ -106,54 +103,76 @@ class SimpleHeuGreedy():
             # Discount function
             for j in suppliers:
                 for l in batch:
-                    #https://math.stackexchange.com/questions/3380904/reformulating-constraint-containing-equivalence
-                    M=1000000
-                    m=-M
-                    quantity= pulp.lpSum(O[(i, j)] for i in items)
-                    # batch limits (Steps of the Discount step function)
-                    if l==0:
-                        c_min=0
-                        c_max=4
-                        prob += quantity <= c_max + M*(1-w[(j,l)])
-                        prob += quantity >= c_max + m*w[(j,l)]
+                    # https://math.stackexchange.com/questions/3380904/reformulating-constraint-containing-equivalence
+                    M = dict_data['M']
+                    m = -M
+                    # batch limits
+                    if l == 0:
+                        c_min0 = 0
+                        c_max0 = dict_data['u'][j][0]
+                        prob += pulp.lpSum(O[(i, j)] for i in items) <= c_max0 + M * (1 - w[(j, l)])
+                        prob += pulp.lpSum(O[(i, j)] for i in items) >= c_max0 + m * w[(j, l)]
 
-                    # https://math.stackexchange.com/questions/3029175/question-to-the-solution-of-indicator-variable-if-x-is-in-specific-range?noredirect=1&lq=1
-                    elif l==1:
-                        c_min=5
-                        c_max=10
-                        prob += quantity <= c_min + M*delta[(j,l)] + M*w[(j,l)]
-                        prob += quantity >= c_max - M*(1-delta[(j,l)]) - M*w[(j,l)]
-                        prob += quantity >= c_min - M*(1-w[(j,l)])
-                        prob += quantity <= c_max + M*(1-w[(j,l)])
+                        # https://math.stackexchange.com/questions/3029175/question-to-the-solution-of-indicator-variable-if-x-is-in-specific-range?noredirect=1&lq=1
 
-                    elif l==2:
-                        c_min=11
-                        c_max=1000
-                        prob += quantity <= c_min + M*w[(j,l)]
-                        prob += quantity >= c_min + m*(1-w[(j,l)])
-                # Associate appropriate discouts here: u1,u2...
-                prob += discount[(j)] == 0*w[(j,0)] + 5*w[(j,1)] + 10*w[(j,2)]
-            
-            # Constraint for Discount function
+                    elif l == 1:
+                        c_min1 = dict_data['u'][j][0]+1
+                        c_max1 = dict_data['u'][j][1]
+                        prob += pulp.lpSum(O[(i, j)] for i in items) <= c_min1 + M * delta[(j, l)] + M * w[(j, l)]
+                        prob += pulp.lpSum(O[(i, j)] for i in items) >= c_max1 - M * (1 - delta[(j, l)]) - M * w[(j, l)]
+                        prob += pulp.lpSum(O[(i, j)] for i in items) >= c_min1 - M * (1 - w[(j, l)])
+                        prob += pulp.lpSum(O[(i, j)] for i in items) <= c_max1 + M * (1 - w[(j, l)])
+
+                    elif l == 2:
+                        c_min2 = dict_data['u'][j][1]+1
+                        c_max2 = dict_data['u'][j][2]
+                        prob += pulp.lpSum(O[(i, j)] for i in items) <= c_min2 + M * delta[(j, l)] + M * w[(j, l)]
+                        prob += pulp.lpSum(O[(i, j)] for i in items) >= c_max2 - M * (1 - delta[(j, l)]) - M * w[(j, l)]
+                        prob += pulp.lpSum(O[(i, j)] for i in items) >= c_min2 - M * (1 - w[(j, l)])
+                        prob += pulp.lpSum(O[(i, j)] for i in items) <= c_max2 + M * (1 - w[(j, l)])
+
+                    elif l == 3:
+                        c_min3 = dict_data['u'][j][2]+1
+                        #c_max3 = dict_data['u'][j][3]
+                        prob += pulp.lpSum(O[(i, j)] for i in items) <= c_min3 + M * w[(j, l)]
+                        prob += pulp.lpSum(O[(i, j)] for i in items) >= c_min3 + m * (1 - w[(j, l)])
+
+                
+                # Associate appropriate discounts here: u1,u2...
+                prob += discount[(j)] == (dict_data['discount_price'][j][0]*0.01*dict_data['fixed_costs'][j] * w[(j, 0)] +
+                                          dict_data['discount_price'][j][1]*0.01*dict_data['fixed_costs'][j] * w[(j, 1)] +
+                                          dict_data['discount_price'][j][2]*0.01*dict_data['fixed_costs'][j] * w[(j, 2)] +
+                                          dict_data['discount_price'][j][3]*0.01*dict_data['fixed_costs'][j] * w[(j, 3)])
+
             for j in suppliers:
                 # w(j,0,t)= 1 --> w(j,1,t)= 0 --> w(j,2,t)= 0
-                prob += w[(j,0)] <= 1 - w[(j,1)]
-                prob += w[(j,0)] <= 1 - w[(j,2)]
-                prob += w[(j,1)] <= 1 - w[(j,0)]
-                prob += w[(j,1)] <= 1 - w[(j,2)]
-                prob += w[(j,2)] <= 1 - w[(j,0)]
-                prob += w[(j,2)] <= 1 - w[(j,1)]
+                prob += w[(j, 0)] <= 1 - w[(j, 1)]
+                prob += w[(j, 0)] <= 1 - w[(j, 2)]
+                prob += w[(j, 0)] <= 1 - w[(j, 3)]
+                prob += w[(j, 1)] <= 1 - w[(j, 0)]
+                prob += w[(j, 1)] <= 1 - w[(j, 2)]
+                prob += w[(j, 1)] <= 1 - w[(j, 3)]
+                prob += w[(j, 2)] <= 1 - w[(j, 0)]
+                prob += w[(j, 2)] <= 1 - w[(j, 1)]
+                prob += w[(j, 2)] <= 1 - w[(j, 3)]
+                prob += w[(j, 3)] <= 1 - w[(j, 0)]
+                prob += w[(j, 3)] <= 1 - w[(j, 1)]
+                prob += w[(j, 3)] <= 1 - w[(j, 2)]
 
             # Heuristic Constraint 1: Order only if I[(i, t)] <= threshold
             for i in items:
-                M=1000000
-                m=-M
-                threshold=15 # OPTIMIZE THIS THRESHOLD
-                prob += M*(1-k[(i)]) >= - threshold + I[(i)]
-                prob += m*k[(i)] <= - threshold + I[(i)]
+                threshold=100 # OPTIMIZE THIS THRESHOLD
+                if I[(i)] <= threshold:
+                    prob += pulp.lpSum(O[(i, j)] for j in suppliers) == dict_data['demand'][(i, t)]
+                else:
+                    prob += pulp.lpSum(O[(i, j)] for j in suppliers) == 0
+
+                #M=dict_data['M']
+                #m=-M
+                #prob += M*(1-k[(i)]) >= - threshold + I[(i)]
+                #prob += m*k[(i)] <= - threshold + I[(i)]
                 # How much to order??? - Modify the constraint!!!
-                prob += pulp.lpSum(O[(i, j)] for j in suppliers) == dict_data['demand'][(i, t)]*k[(i)] # Order as much as the demand
-                #prob += pulp.lpSum(O[(i, j)] for j in suppliers) == 10*k[(i)]
+                #prob += pulp.lpSum(O[(i, j)] for j in suppliers) == dict_data['demand'][(i, t)]*k[(i)] # Order as much as the demand
 
             # Solve the problem using COIN_CMD solver
             msg_val = 1 if verbose else 0
@@ -171,8 +190,8 @@ class SimpleHeuGreedy():
             comp_time = end - start
 
             # print the values of the variables of the solution
-            #for v in sol:
-               #print(v.name, "=", v.varValue)
+            for v in sol:
+               print(v.name, "=", v.varValue)
 
             # Status of the solution (infesible, optimal...)
             print(pulp.LpStatus[prob.status])
@@ -204,9 +223,18 @@ class SimpleHeuGreedy():
             # Update the inventory
             for i in items:
                 if t-int(dict_data['time_steps'][i]) < 0:
-                    I[(i)] = I[(i)] - dict_data['demand'][(i, t)] + pre_order[(i, t-int(dict_data['time_steps'][i]))]
+                    dem = I[(i)] - pulp.value(sold[(i)]) + pre_order[(i, t-int(dict_data['time_steps'][i]))]
+                    if dem > 0:
+                        I[(i)]=dem
+                    else:
+                        I[(i)]=0
                 else:
-                    I[(i)] = I[(i)] - dict_data['demand'][(i, t)] + sol_o[(i, t-int(dict_data['time_steps'][i]))]
+                    dem = I[(i)] - pulp.value(sold[(i)]) + sol_o[(i, t-int(dict_data['time_steps'][i]))]
+                    if dem > 0:
+                        I[(i)]=dem
+                    else:
+                        I[(i)]=0
+            print(I)
 
             # Sum of the profits from the different time steps
             of_tot += of
