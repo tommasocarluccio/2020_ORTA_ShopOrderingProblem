@@ -5,15 +5,13 @@ import logging
 import pulp
 import numpy as np
 
-np.random.seed(0)
-
 # Solve the problem using a Greedy algorithm which chooses the best option day by day
-class simpleHeuGreedy():
+class simpleHeuGreedy_not_optimized():
     def __init__(self):
         pass
 
     def solveGreedy(
-            self, dict_data, epsilon, time_limit=None,
+            self, dict_data, threshold, time_limit=None,
             gap=None, verbose=False
     ):
         """[summary]
@@ -42,15 +40,12 @@ class simpleHeuGreedy():
         of_tot=0
         time_tot=0
 
-        random_extractions=0
-        #values_extracted=[]
-
         # Initialize inventory
         I= initial_inventory
         for t in time_period:
 
-            # Update the inventory
             if t != 0:
+                # Update the inventory
                 for i in items:
                     if t-int(dict_data['time_steps'][i]) < 0:
                         # Take instance preorder value from pre-order table
@@ -94,11 +89,13 @@ class simpleHeuGreedy():
             # Needed for discount
             w = pulp.LpVariable.dicts("w", [(j,l) for j in suppliers for l in batch], cat=pulp.LpBinary)
 
+            # Needed for "Heuristic Constraint 1"
+            #k = pulp.LpVariable.dicts("k", [(i) for i in items], cat=pulp.LpBinary)
+
             # Needed for constraint: https://math.stackexchange.com/questions/3029175/question-to-the-solution-of-indicator-variable-if-x-is-in-specific-range?noredirect=1&lq=1
             delta = pulp.LpVariable.dicts("delta", [(j,l) for j in suppliers for l in batch], cat=pulp.LpBinary)
 
             # Objective function:
-
             prob += pulp.lpSum(dict_data['prices'][i] * sold[(i)] for i in items)-\
                     pulp.lpSum(dict_data['fixed_costs'][j] * y[(j)] for j in suppliers) - \
                     pulp.lpSum(dict_data['costs'][(i, j)] * O[(i, j)] for i in items for j in suppliers) - \
@@ -180,25 +177,19 @@ class simpleHeuGreedy():
                 prob += w[(j, 3)] <= 1 - w[(j, 2)]
 
             # Heuristic Constraint 1: Order only if I[(i, t)] <= threshold
-            # Heuristic Constraint 2: do not order if the order doesn't arrive in time
-            thresholds=[60, 80, 65, 40, 60, 70, 62, 40, 60, 10] # Optimized thresholds   
             for i in items:
-                random_value=np.random.uniform(0,1)
-                #values_extracted.append(random_value)
-                if t+int(dict_data['time_steps'][i]) < dict_data['time_period']:
-                    if random_value > epsilon:
-                        if I[(i)] <= thresholds[i]:
-                            prob += pulp.lpSum(O[(i, j)] for j in suppliers) == dict_data['demand'][(i, t)]
-                        else:
-                            prob += pulp.lpSum(O[(i, j)] for j in suppliers) == 0
-                    else:
-                        random_extractions+=1
-                        if I[(i)] <= thresholds[i]:
-                            prob += pulp.lpSum(O[(i, j)] for j in suppliers) == 0
-                        else:
-                            prob += pulp.lpSum(O[(i, j)] for j in suppliers) == dict_data['demand'][(i, t)]
+                threshold=threshold # OPTIMIZE THIS THRESHOLD
+                if I[(i)] <= threshold and t+int(dict_data['time_steps'][i]) < dict_data['time_period']:
+                    prob += pulp.lpSum(O[(i, j)] for j in suppliers) == dict_data['demand'][(i, t)]
                 else:
                     prob += pulp.lpSum(O[(i, j)] for j in suppliers) == 0
+
+                #M=dict_data['M']
+                #m=-M
+                #prob += M*(1-k[(i)]) >= - threshold + I[(i)]
+                #prob += m*k[(i)] <= - threshold + I[(i)]
+                # How much to order??? - Modify the constraint!!!
+                #prob += pulp.lpSum(O[(i, j)] for j in suppliers) == dict_data['demand'][(i, t)]*k[(i)] # Order as much as the demand
 
             # Solve the problem using COIN_CMD solver
             msg_val = 1 if verbose else 0
@@ -246,11 +237,10 @@ class simpleHeuGreedy():
             logging.info("\n\tof: {}\n\tsol:\n{} \n\ttime:{}".format(of, sol_o, comp_time))
             logging.info("#########")
 
-            
+            #print(I)
+
             # Sum of the profits from the different time steps
             of_tot += of
             time_tot += comp_time
-            print("random_extractions=", random_extractions)
-            #print(values_extracted)
 
         return of_tot, sol_o, time_tot
