@@ -92,7 +92,7 @@ if __name__ == '__main__':
 
         # Run heuristic solution
         heu = simpleHeuGreedy()
-        of_heu, sol_heu, comp_time_heu = heu.solveGreedy(dict_data,verbose=True)
+        of_heu, sol_heu, comp_time_heu = heu.solveGreedy(dict_data,0,verbose=True)
         of_heu_tot.append(of_heu)
         time_heu_tot.append(comp_time_heu)
 
