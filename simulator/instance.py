@@ -88,12 +88,12 @@ class Instance():
                 for j in range(sim_setting['num_products']):
                     self.costs[i,j]= random.randint(1,self.prices[j]-1)
 
-        """
+        #set possibility to not have some products
         for i in range(sim_setting['num_suppliers']):
             for j in range(sim_setting['num_products']):
-                if random.random() > 0.9:
+                if random.random() > 0.8:
                    self.costs[i, j] = 1000000  # In order to avoid NaN (would never choose this item: too costly)
-        """
+        
 
         self.costs = self.costs.T
         #self.costs[1,0] = 10
