@@ -1,14 +1,13 @@
-# Project Template
+# Shop ordering problem
 
-In this file, we give you some general guideline and advices for the project. You need two components:
+The purpose of this project is the creation of a mathematical model to describe the multi- period ordering planning of a generic store. The LP formulation is implemented in a Python environment, exploiting the PuLP library. The analysis on the case study is performed consid- ering both an exact and a heuristic solution. After some instances generation, computational results are provided to offer a complete overview of the project and its functionalities.
+
+## Running the code
+
+To run the code you need two components:
 
 1. Python 3.6
-1. CBC solver
-
-## Python
-
-Linux users should have python already installed in their PC. For the other users I strongly recomment to install **Anaconda** and to use its terminal for installing new packages. You can find details [here](https://www.anaconda.com/distribution/) and [there](https://www.anaconda.com/distribution/#download-section). 
-
+2. CBC solver
 
 ## CBC solver
 In order to install CBC, for Linux users just run the following command:
@@ -46,23 +45,3 @@ Run the code by writing in the terminal
 ```
 python3 main.py
 ```
-and enjoy...
-
-
-## Report
-
-For the final report you can use both Word or Latex.
-I strongly suggest the second one because it is more suited to deal with equations, models, graphs, etc.
-A really nice website that enables you to work together and deals with all the package issues of latex is [Overleaf](https://www.overleaf.com/). In the folder *report* you have a latex template that you can directly load on overleaf.
-A useful link for creating latex table is [here](https://www.tablesgenerator.com/latex_tables)
-The folder report contains a latex template with some examples.
-
-
-## Text Editor
-
-In order write good code you need a good editor. The best one that I recomend are:
-
-1. [Visual Studio Code](https://code.visualstudio.com/) free;
-1. [Sublime Text](https://www.sublimetext.com/) free for non commercial usage;
-1. [PyCharm](https://www.jetbrains.com/pycharm/) free for students.
-
